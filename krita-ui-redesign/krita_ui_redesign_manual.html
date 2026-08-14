@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Krita UI Redesign Manual</title>
+  <meta charset="utf-8"/>
+  <style type="text/css">
+    /* No forced text/background colors — inherit from Krita's help viewer
+       so the manual stays readable in both dark and light themes. */
+    body {
+      font-family: sans-serif;
+      line-height: 1.45;
+      max-width: 52em;
+      margin: 1.5em auto;
+      padding: 0 1em;
+    }
+    h1 {
+      font-size: 1.6em;
+      border-bottom: 1px solid currentColor;
+      padding-bottom: 0.3em;
+      opacity: 0.95;
+    }
+    h2 { font-size: 1.25em; margin-top: 1.4em; }
+    h3 { font-size: 1.05em; margin-top: 1.1em; }
+    table { border-collapse: collapse; width: 100%; margin: 0.8em 0; }
+    th, td {
+      border: 1px solid currentColor;
+      padding: 0.4em 0.6em;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { font-weight: bold; }
+    code {
+      font-family: monospace;
+      border: 1px solid currentColor;
+      padding: 0.05em 0.3em;
+    }
+    ul, ol { margin: 0.4em 0 0.8em 1.4em; }
+    li { margin: 0.25em 0; }
+    .note, .warn {
+      border-left: 4px solid currentColor;
+      padding: 0.6em 0.9em;
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Krita UI Redesign Manual</h1>
+
+<p>
+  <strong>Pulvergate fork</strong> — Krita 6.x / PyQt6 port of the community UI redesign
+  plugin originally by Kapyia and Pedro Reis. Adds live theme following and robustness
+  fixes merged from the Kaledosium fork.
+</p>
+
+<p>
+  After enabling the plugin and restarting Krita, a <strong>Redesign</strong> menu
+  appears in the menu bar. All options are checkable and remember their state.
+</p>
+
+<!-- ============================================================ -->
+<h2>1. Installation</h2>
+
+<ol>
+  <li>
+    Copy the <code>krita-ui-redesign</code> folder <strong>and</strong> the
+    <code>krita-ui-redesign.desktop</code> file into Krita’s <code>pykrita</code> folder:
+    <ul>
+      <li><strong>Linux:</strong> <code>~/.local/share/krita/pykrita/</code></li>
+      <li><strong>Windows:</strong> <code>C:\Users\USERNAME\AppData\Roaming\krita\pykrita</code></li>
+    </ul>
+  </li>
+  <li>The <code>.desktop</code> file must sit <strong>next to</strong> the folder, not inside it.</li>
+  <li>
+    In Krita: <strong>Settings → Configure Krita → Python Plugin Manager</strong> →
+    enable <strong>Krita UI Redesign</strong>.
+  </li>
+  <li>Restart Krita.</li>
+</ol>
+
+<p>
+  Tip: <strong>Settings → Manage Resources → Open Resource Folder… → pykrita</strong>
+  opens the correct location.
+</p>
+
+<!-- ============================================================ -->
+<h2>2. Features and how to use them</h2>
+
+<table>
+  <tr>
+    <th>Menu item</th>
+    <th>What it does</th>
+  </tr>
+  <tr>
+    <td><strong>Borderless Toolbars</strong></td>
+    <td>
+      Removes borders / white lines on toolbars. Can be used on its own.
+      Also applied automatically when <em>Use flat theme</em> is on.
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Thin Document Tabs</strong></td>
+    <td>Makes the document tab bar shorter (slimmer tabs).</td>
+  </tr>
+  <tr>
+    <td><strong>Use flat theme</strong></td>
+    <td>
+      Applies flat styling to dockers, toolbars, menus, tabs, buttons, status bar,
+      tree views, overview docker, and the welcome page. Colors always follow the
+      <strong>active Krita color scheme</strong> (Settings → Themes).
+    </td>
+  </tr>
+  <tr>
+    <td><strong>NuToolbox</strong></td>
+    <td>
+      Puts a floating, collapsible toolbox pad on the <strong>left</strong> side of the canvas
+      (borrows Krita’s Toolbox docker). Toggle visibility with the pad’s arrow button
+      or the related action (default shortcut area: settings actions; often bound to <strong>T</strong>).
+    </td>
+  </tr>
+  <tr>
+    <td><strong>NuToolOptions</strong></td>
+    <td>
+      Puts a floating, collapsible tool options pad on the <strong>right</strong> side of the canvas.
+      Requires Tool Options to live in a docker (see below). Often bound to <strong>N</strong>.
+    </td>
+  </tr>
+</table>
+
+<div class="warn">
+  <strong>NuToolOptions requirement:</strong>
+  Set <strong>Settings → Configure Krita → General → Tools → Tool Options Location</strong>
+  to <strong>In Docker</strong>, then restart Krita once. If this is not set, the plugin
+  will show a message when you try to enable NuToolOptions.
+</div>
+
+<h3>Live theme following</h3>
+<p>
+  When you change themes under <strong>Settings → Themes</strong>, the flat theme and
+  NuTools styles rebuild from the current palette and reapply automatically.
+  You do not need to restart Krita or toggle the Redesign options again.
+</p>
+
+<h3>NuTools pads</h3>
+<ul>
+  <li>Pads sit on the canvas edge and follow the active document view / subwindow.</li>
+  <li>Use the small arrow button on each pad to collapse or expand the contents.</li>
+  <li>
+    While NuToolbox or NuToolOptions is active, the original docker shells are kept
+    hidden so empty Toolbox / Tool Options panels do not reappear in the docker area.
+  </li>
+  <li>
+    Turning the menu option off returns the docker to Krita’s normal docking UI.
+  </li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>3. What this fork changes</h2>
+
+<p>Summary of work relative to the classic Krita UI Redesign plugin:</p>
+
+<h3>Krita 6.x / PyQt6 port</h3>
+<ul>
+  <li>All PyQt5 imports updated to PyQt6</li>
+  <li>Palette access via <code>QApplication.instance().palette()</code></li>
+  <li>Qt 6 enum style (<code>QEvent.Type.*</code>, <code>QFrame.Shape.*</code>, <code>Qt.WidgetAttribute.*</code>, etc.)</li>
+  <li><code>exec_()</code> → <code>exec()</code></li>
+  <li>Null-checks for widgets that may be missing (welcome page, overview docker, etc.)</li>
+</ul>
+
+<h3>Live theme following (Pulvergate)</h3>
+<ul>
+  <li>Palette colors are re-read every time styles are built</li>
+  <li>NuTools stylesheets rebuilt from the active palette</li>
+  <li>Application listens for palette/theme changes and refreshes the UI immediately</li>
+  <li>
+    Broader flat coverage: welcome page, overview docker, recent documents / news
+    frames, combo boxes, status bar text, tree views, spin box chrome
+  </li>
+</ul>
+
+<h3>Robustness and polish (merged from Kaledosium)</h3>
+<ul>
+  <li>
+    <strong>Docker hardening:</strong> empty Toolbox / Tool Options shells stay hidden
+    while the floating pads are active
+  </li>
+  <li>
+    <strong>Tool Options container:</strong> floating tool options use a styled
+    rounded container that matches the flat look
+  </li>
+  <li>
+    <strong>Borderless Toolbars:</strong> independent menu toggle restored (still
+    auto-on with flat theme)
+  </li>
+  <li>
+    <strong>Pad polish:</strong> tighter margins, ruler-aware left offset, safer
+    collapse button behavior
+  </li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>4. Tips and troubleshooting</h2>
+
+<ul>
+  <li>
+    If NuToolOptions does nothing or shows a dialog: set Tool Options Location to
+    <strong>In Docker</strong> and restart Krita.
+  </li>
+  <li>
+    If colors look wrong after switching themes: toggle Flat Theme off and on once,
+    or restart Krita (live refresh should handle this, but a restart is a safe reset).
+  </li>
+  <li>
+    If the original Toolbox docker reappears empty: turn NuToolbox off and on again
+    to re-borrow and hide the shell.
+  </li>
+  <li>
+    Shortcuts for Show Toolbox / Show Tool Options can be rebound under
+    <strong>Settings → Configure Krita → Keyboard Shortcuts</strong> (search for
+    “Show Toolbox” or “Show Tool Options”).
+  </li>
+</ul>
+
+<div class="note">
+  Feedback and discussion are welcome on
+  <a href="https://krita-artists.org/">Krita Artists</a>.
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Credits and license</h2>
+
+<ul>
+  <li>Original plugin: <strong>Kapyia</strong>, <strong>Pedro Reis</strong></li>
+  <li>Toolbar white-line removal: <strong>Kapyia</strong></li>
+  <li>Krita 6 / PyQt6 port, live theme following, packaging: <strong>Pulvergate</strong> fork</li>
+  <li>
+    Docker hardening, tool-options container, borderless toggle restore, pad polish:
+    merged from the <strong>Kaledosium</strong> fork
+  </li>
+</ul>
+
+<p>
+  Licensed under the <strong>GNU General Public License v3</strong> (or later),
+  same as the original plugin.
+</p>
+
+</body>
+</html>

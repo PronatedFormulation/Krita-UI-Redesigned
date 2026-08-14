@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=Krita/PythonPlugin
+X-KDE-Library=krita-ui-redesign
+X-Python-2-Compatible=false
+X-Krita-Manual=krita_ui_redesign_manual.html
+Name=Krita UI Redesign
+Comment=Modernize Krita's UI with collapsible toolbox, thin tabs and flat theme

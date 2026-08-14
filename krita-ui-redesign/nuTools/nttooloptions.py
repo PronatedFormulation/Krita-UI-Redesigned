@@ -1,0 +1,117 @@
+"""
+    Plugin for Krita UI Redesign, Copyright (C) 2020 Kapyia, Pedro Reis
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
+from PyQt6.QtCore import QSignalBlocker
+from PyQt6.QtWidgets import QMdiArea, QDockWidget
+from .ntadjusttosubwindowfilter import ntAdjustToSubwindowFilter
+from .ntwidgetpad import ntWidgetPad
+from .. import variables
+
+class ntToolOptions():
+
+    def __init__(self, window):
+        qWin = window.qwindow()
+        mdiArea = qWin.findChild(QMdiArea)
+        toolOptions = qWin.findChild(QDockWidget, 'sharedtooldocker')
+        self.sourceDocker = toolOptions
+
+        # Create "pad"
+        self.pad = ntWidgetPad(mdiArea)
+        self.pad.setObjectName("toolOptionsPad")
+        self.pad.setViewAlignment('right')
+        self.pad.borrowDocker(toolOptions)
+
+        # Create and install event filter
+        self.adjustFilter = ntAdjustToSubwindowFilter(mdiArea)
+        self.adjustFilter.setTargetWidget(self.pad)
+        mdiArea.subWindowActivated.connect(self.ensureFilterIsInstalled)
+        qWin.installEventFilter(self.adjustFilter)
+
+        # Create visibility toggle action 
+        action = window.createAction("showToolOptions", "Show Tool Options", "settings")
+        action.toggled.connect(self.pad.toggleWidgetVisible)
+        action.setCheckable(True)
+        action.setChecked(True)
+
+        # Disable the related QDockWidget and keep the empty shell hidden
+        self.dockerAction = window.qwindow().findChild(QDockWidget, "sharedtooldocker").toggleViewAction()
+        self.sourceDocker.visibilityChanged.connect(self._onDockerVisibilityChanged)
+        self._ensureDockerHidden()
+        self.dockerAction.setEnabled(False)
+        self.updateStyleSheet()
+
+    def ensureFilterIsInstalled(self, subWin):
+        """Ensure that the current SubWindow has the filter installed,
+        and immediately move the Tool Options to current View."""
+        if subWin:
+            subWin.installEventFilter(self.adjustFilter)
+            self._ensureDockerHidden()
+            self.pad.adjustToView()
+            self.updateStyleSheet()
+
+    def _onDockerVisibilityChanged(self, isVisible):
+        if isVisible and self._isSourceDockerEffectivelyEmpty():
+            self._ensureDockerHidden()
+
+    def _ensureDockerHidden(self):
+        if not self._isSourceDockerEffectivelyEmpty():
+            return
+
+        if self.sourceDocker and self.sourceDocker.isVisible():
+            self.sourceDocker.hide()
+
+        if self.dockerAction and self.dockerAction.isChecked():
+            blocker = QSignalBlocker(self.dockerAction)
+            self.dockerAction.setChecked(False)
+
+    def _isSourceDockerEffectivelyEmpty(self):
+        if not self.sourceDocker:
+            return False
+
+        sourceWidget = self.sourceDocker.widget()
+        if sourceWidget is None:
+            return True
+
+        return sourceWidget.parentWidget() is not self.sourceDocker
+
+    def findDockerAction(self, window, text):
+        dockerMenu = None
+        
+        for m in window.qwindow().actions():
+            if m.objectName() == "settings_dockers_menu":
+                dockerMenu = m
+
+                for a in dockerMenu.menu().actions():
+                    if a.text().replace('&', '') == text:
+                        return a
+                
+        return False
+
+    def updateStyleSheet(self):
+        # Styles are rebuilt from the active theme palette in variables.buildFlatTheme()
+        # (called by redesign.rebuildStyleSheet). Just apply the current values.
+        self.pad.setStyleSheet(variables.nu_tool_options_style)
+        if hasattr(self.pad, 'btnHide') and self.pad.btnHide:
+            self.pad.btnHide.setStyleSheet(variables.nu_toggle_button_style)
+
+    def close(self):
+        try:
+            self.sourceDocker.visibilityChanged.disconnect(self._onDockerVisibilityChanged)
+        except (TypeError, RuntimeError):
+            pass
+        self.dockerAction.setEnabled(True)
+        return self.pad.close()
